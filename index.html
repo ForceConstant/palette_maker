@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palette Maker</title>
+    <style>
+        .color-patch {
+            width: 50px;
+            height: 50px;
+            display: inline-block;
+            border: 1px solid #000;
+            margin: 5px;
+        }
+
+        #palette {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Color Patches -->
+    <p> Base Colors </p>
+    <input type="color" id="color1" value="#ff0000">
+    <div class="color-patch" id="patch1" style="background-color: #ff0000"></div>
+    <input type="color" id="color2" value="#00ff00">
+    <div class="color-patch" id="patch2" style="background-color: #00ff00"></div>
+    <input type="color" id="color3" value="#0000ff">
+    <div class="color-patch" id="patch3" style="background-color: #0000ff"></div>
+    <input type="color" id="color4" value="#ffff00">
+    <div class="color-patch" id="patch4" style="background-color: #ffff00"></div>
+
+    <p>Generated Palette</p>
+    <!-- Canvas for Palette -->
+    <canvas id="palette" width="900" height="50"></canvas>
+
+    <script>
+        // Get elements
+        const color1Input = document.getElementById('color1');
+        const color2Input = document.getElementById('color2');
+        const color3Input = document.getElementById('color3');
+        const color4Input = document.getElementById('color4');
+        const patch1 = document.getElementById('patch1');
+        const patch2 = document.getElementById('patch2');
+        const patch3 = document.getElementById('patch3');
+        const patch4 = document.getElementById('patch4');
+        const paletteCanvas = document.getElementById('palette');
+        const ctx = paletteCanvas.getContext('2d');
+
+        // Add event listeners to color patches
+        patch1.addEventListener('click', () => color1Input.click());
+        patch2.addEventListener('click', () => color2Input.click());
+        patch3.addEventListener('click', () => color3Input.click());
+        patch4.addEventListener('click', () => color4Input.click());
+
+        // Update color patches on color change
+        color1Input.addEventListener('input', () => patch1.style.backgroundColor = color1Input.value);
+        color2Input.addEventListener('input', () => patch2.style.backgroundColor = color2Input.value);
+        color3Input.addEventListener('input', () => patch3.style.backgroundColor = color3Input.value);
+        color4Input.addEventListener('input', () => patch4.style.backgroundColor = color4Input.value);
+
+        // Function to generate lighter shades of a color
+        function lighterShades(color, amount) {
+            const shades = [];
+            for (let i = 1; i <= 3; i++) {
+                shades.push(lightenColor(color, amount * i));
+            }
+            return shades;
+        }
+
+        // Function to lighten a color
+        function lightenColor(color, amount) {
+            console.log('lighten by: ', amount)
+            let rgb = hexToRgb(color);
+
+            // Calculate the new RGB values
+            rgb.r = Math.min(255, Math.floor(rgb.r + (255 - rgb.r) * amount));
+            rgb.g = Math.min(255, Math.floor(rgb.g + (255 - rgb.g) * amount));
+            rgb.b = Math.min(255, Math.floor(rgb.b + (255 - rgb.b) * amount));
+
+            return rgbToHex(rgb);
+        }
+
+        // Helper function to convert hex to RGB
+        function hexToRgb(hex) {
+            // Remove the '#' if present
+            hex = hex.replace(/^#/, '');
+            // Parse the r, g, b values
+            let bigint = parseInt(hex, 16);
+            return {
+                r: (bigint >> 16) & 255,
+                g: (bigint >> 8) & 255,
+                b: bigint & 255
+            };
+        }
+
+        // Helper function to convert RGB to hex
+        function rgbToHex(rgb) {
+            return '#' + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1).toUpperCase();
+        }
+
+        // Function to draw palette
+        function drawPalette() {
+            ctx.clearRect(0, 0, paletteCanvas.width, paletteCanvas.height);
+            let x = 0;
+            let amount = .25
+            const colors = [color1Input.value, color2Input.value, color3Input.value, color4Input.value];
+            console.log('Drawing palette with colors:', colors);
+            for (const color of colors) {
+                console.log('Drawing color:', color, 'at position:', x);
+                if (!ctx.fillStyle) {
+                    console.error('Error setting fillStyle:', ctx.fillStyle);
+                }
+                ctx.fillStyle = color;
+                ctx.fillRect(x, 0, 50, 50);
+                x += 50;
+                const shades = lighterShades(color, amount);
+                if (shades.length !== 3) {
+                    console.error('Error generating shades:', shades);
+                }
+                console.log('Drawing shades of color:', color, 'at positions:', x, 'to', x + (shades.length * 50));
+                for (const shade of shades) {
+                    console.log('Drawing shade:', shade, 'at position:', x);
+                    if (!ctx.fillStyle) {
+                        console.error('Error setting fillStyle:', ctx.fillStyle);
+                    }
+                    ctx.fillStyle = shade;
+                    ctx.fillRect(x, 0, 50, 50);
+                    x += 50;
+                }
+            }
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(x, 0, 50, 50);
+
+            x += 50
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(x, 0, 50, 50);
+            console.log('Finished drawing palette.');
+        }
+
+
+        // Draw palette on page load
+        drawPalette();
+
+        // Update palette on color change
+        color1Input.addEventListener('input', drawPalette);
+        color2Input.addEventListener('input', drawPalette);
+        color3Input.addEventListener('input', drawPalette);
+        color4Input.addEventListener('input', drawPalette);
+    </script>
+</body>
+
+</html>
