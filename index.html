@@ -36,6 +36,10 @@
     <p>Generated Palette</p>
     <!-- Canvas for Palette -->
     <canvas id="palette" width="900" height="50"></canvas>
+    <p></p>
+    <button id="savePaletteBtn">Save Palette</button>
+
+    <pre id="gplCodeDisplay"></pre>
 
     <script>
         // Get elements
@@ -146,10 +150,67 @@
         drawPalette();
 
         // Update palette on color change
-        color1Input.addEventListener('input', drawPalette);
-        color2Input.addEventListener('input', drawPalette);
-        color3Input.addEventListener('input', drawPalette);
-        color4Input.addEventListener('input', drawPalette);
+        color1Input.addEventListener('input', () => {
+            drawPalette();
+            updateGPLDisplay();
+        });
+        color2Input.addEventListener('input', () => {
+            drawPalette();
+            updateGPLDisplay();
+        });
+        color3Input.addEventListener('input', () => {
+            drawPalette();
+            updateGPLDisplay();
+        });
+        color4Input.addEventListener('input', () => {
+            drawPalette();
+            updateGPLDisplay();
+        });
+
+        function generateGPL(colors) {
+            let gpl = "GIMP Palette\n";
+            gpl += "Name: Custom Palette\n";
+            gpl += "#\n";
+            colors.forEach(color => {
+                let rgb = hexToRgb(color);
+                gpl += `${rgb.r} ${rgb.g} ${rgb.b} Untitled\n`;
+                const shades = lighterShades(color, 0.25);
+                shades.forEach(shade => {
+                    let shadeRgb = hexToRgb(shade);
+                    gpl += `${shadeRgb.r} ${shadeRgb.g} ${shadeRgb.b} Untitled\n`;
+                });
+            });
+            // Add black and white colors
+            gpl += "0 0 0 Black\n";
+            gpl += "255 255 255 White\n";
+            return gpl;
+        }
+
+        // Function to download the GPL palette file
+        function downloadGPL(gpl) {
+            const blob = new Blob([gpl], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'palette.gpl';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Event listener for the save button
+        document.getElementById('savePaletteBtn').addEventListener('click', () => {
+            const colors = [color1Input.value, color2Input.value, color3Input.value, color4Input.value];
+            const gpl = generateGPL(colors);
+            downloadGPL(gpl);
+        });
+
+        function updateGPLDisplay() {
+            const colors = [color1Input.value, color2Input.value, color3Input.value, color4Input.value];
+            const gpl = generateGPL(colors);
+            document.getElementById('gplCodeDisplay').textContent = gpl;
+        }
     </script>
 </body>
 
