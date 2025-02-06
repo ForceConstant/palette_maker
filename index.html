@@ -35,7 +35,7 @@
 
     <p>Generated Palette</p>
     <!-- Canvas for Palette -->
-    <canvas id="palette" width="900" height="50"></canvas>
+    <canvas id="palette" width="1000" height="50"></canvas>
     <p></p>
     <button id="savePaletteBtn">Save Palette</button>
 
@@ -53,6 +53,8 @@
         const patch4 = document.getElementById('patch4');
         const paletteCanvas = document.getElementById('palette');
         const ctx = paletteCanvas.getContext('2d');
+        const num_dark_shades = 2;
+        const num_light_shades = 2;
 
         // Add event listeners to color patches
         patch1.addEventListener('click', () => color1Input.click());
@@ -69,21 +71,41 @@
         // Function to generate lighter shades of a color
         function lighterShades(color, amount) {
             const shades = [];
-            for (let i = 1; i <= 3; i++) {
+            for (let i = 1; i <= num_light_shades; i++) {
                 shades.push(lightenColor(color, amount * i));
+            }
+            return shades;
+        }
+
+        // Function to generate darker shades of a color
+        function darkerShades(color, amount) {
+            const shades = [];
+            for (let i = num_dark_shades; i >= 1; i--) {
+                shades.push(darkenColor(color, amount * i));
             }
             return shades;
         }
 
         // Function to lighten a color
         function lightenColor(color, amount) {
-            console.log('lighten by: ', amount)
             let rgb = hexToRgb(color);
 
             // Calculate the new RGB values
             rgb.r = Math.min(255, Math.floor(rgb.r + (255 - rgb.r) * amount));
             rgb.g = Math.min(255, Math.floor(rgb.g + (255 - rgb.g) * amount));
             rgb.b = Math.min(255, Math.floor(rgb.b + (255 - rgb.b) * amount));
+
+            return rgbToHex(rgb);
+        }
+
+        // Function to darken a color
+        function darkenColor(color, amount) {
+            let rgb = hexToRgb(color);
+
+            // Calculate the new RGB values
+            rgb.r = Math.max(0, Math.floor(rgb.r * (1 - amount)));
+            rgb.g = Math.max(0, Math.floor(rgb.g * (1 - amount)));
+            rgb.b = Math.max(0, Math.floor(rgb.b * (1 - amount)));
 
             return rgbToHex(rgb);
         }
@@ -104,45 +126,6 @@
         // Helper function to convert RGB to hex
         function rgbToHex(rgb) {
             return '#' + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1).toUpperCase();
-        }
-
-        // Function to draw palette
-        function drawPalette() {
-            ctx.clearRect(0, 0, paletteCanvas.width, paletteCanvas.height);
-            let x = 0;
-            let amount = .25
-            const colors = [color1Input.value, color2Input.value, color3Input.value, color4Input.value];
-            console.log('Drawing palette with colors:', colors);
-            for (const color of colors) {
-                console.log('Drawing color:', color, 'at position:', x);
-                if (!ctx.fillStyle) {
-                    console.error('Error setting fillStyle:', ctx.fillStyle);
-                }
-                ctx.fillStyle = color;
-                ctx.fillRect(x, 0, 50, 50);
-                x += 50;
-                const shades = lighterShades(color, amount);
-                if (shades.length !== 3) {
-                    console.error('Error generating shades:', shades);
-                }
-                console.log('Drawing shades of color:', color, 'at positions:', x, 'to', x + (shades.length * 50));
-                for (const shade of shades) {
-                    console.log('Drawing shade:', shade, 'at position:', x);
-                    if (!ctx.fillStyle) {
-                        console.error('Error setting fillStyle:', ctx.fillStyle);
-                    }
-                    ctx.fillStyle = shade;
-                    ctx.fillRect(x, 0, 50, 50);
-                    x += 50;
-                }
-            }
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(x, 0, 50, 50);
-
-            x += 50
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fillRect(x, 0, 50, 50);
-            console.log('Finished drawing palette.');
         }
 
 
@@ -168,15 +151,56 @@
             updateGPLDisplay();
         });
 
+        function drawPalette() {
+            ctx.clearRect(0, 0, paletteCanvas.width, paletteCanvas.height);
+            let x = 0;
+            let amount = .25;
+            const colors = [color1Input.value, color2Input.value, color3Input.value, color4Input.value];
+            for (const color of colors) {
+                const darkShades = darkerShades(color, amount);
+                const lightShades = lighterShades(color, amount);
+
+                for (const shade of darkShades) {
+                    ctx.fillStyle = shade;
+                    ctx.fillRect(x, 0, 50, 50);
+                    x += 50;
+                }
+
+                ctx.fillStyle = color;
+                ctx.fillRect(x, 0, 50, 50);
+                x += 50;
+
+                for (const shade of lightShades) {
+                    ctx.fillStyle = shade;
+                    ctx.fillRect(x, 0, 50, 50);
+                    x += 50;
+                }
+            }
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(x, 0, 50, 50);
+
+            x += 50;
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(x, 0, 50, 50);
+        }
+
         function generateGPL(colors) {
             let gpl = "GIMP Palette\n";
             gpl += "Name: Custom Palette\n";
             gpl += "#\n";
             colors.forEach(color => {
+                const darkShades = darkerShades(color, 0.25);
+                const lightShades = lighterShades(color, 0.25);
+
+                darkShades.forEach(shade => {
+                    let shadeRgb = hexToRgb(shade);
+                    gpl += `${shadeRgb.r} ${shadeRgb.g} ${shadeRgb.b} Untitled\n`;
+                });
+
                 let rgb = hexToRgb(color);
                 gpl += `${rgb.r} ${rgb.g} ${rgb.b} Untitled\n`;
-                const shades = lighterShades(color, 0.25);
-                shades.forEach(shade => {
+
+                lightShades.forEach(shade => {
                     let shadeRgb = hexToRgb(shade);
                     gpl += `${shadeRgb.r} ${shadeRgb.g} ${shadeRgb.b} Untitled\n`;
                 });
