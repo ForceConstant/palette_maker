@@ -389,7 +389,8 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'palette.gpl';
+            a.setAttribute('download', 'palette.gpl');
+            a.setAttribute('target', '_blank'); // Ensure it opens in a new tab
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
