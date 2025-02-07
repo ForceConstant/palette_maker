@@ -2,318 +2,338 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Palette Maker</title>
-    <style>
-        .color-patch {
-            width: 50px;
-            height: 50px;
-            display: inline-block;
-            border: 1px solid #000;
-            margin: 5px;
-        }
-
-        #palette {
-            margin-top: 20px;
-        }
-    </style>
-    <script src="https://www.w3schools.com/lib/w3color.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Palette Maker</title>
+  <style type="text/tailwindcss">
+    .swatch {
+      @apply size-10;
+    }
+  </style>
+  <script src="https://www.w3schools.com/lib/w3color.js"></script>
+  <script src="https://unpkg.com/@tailwindcss/browser"></script>
 </head>
 
-<body>
+<body class="p-4 pt-0 dark:bg-gray-900 h-full w-full dark:text-gray-50 flex flex-col ">
 
-    <!-- Color Patches -->
-    <p> Base Colors </p>
-    <input type="color" id="color1" value="#ff0000">
-    <input type="color" id="color2" value="#00ff00">
-    <input type="color" id="color3" value="#0000ff">
-    <input type="color" id="color4" value="#ffff00">
+<h1 class="mx-auto py-10 text-3xl sm:text-4xl">
+  Palette Generator
+</h1>
+<div class="flex gap-8 flex-col sm:flex-row">
 
-    <p> Max Hue Change Amount </p>
-    <input type="number" id="hueShiftMax" value="40">
+  <div
+    class="w-full mx-auto p-4 bg-white border border-gray-200 rounded-lg shadow-sm sm:p-8 dark:bg-gray-800 dark:border-gray-700 flex flex-col gap-4">
+    <fieldset class="flex">
+      <legend>Base Colors</legend>
+      <div>
+        <input type="color" id="color1" value="#ff0000">
+        <input type="color" id="color2" value="#00ff00">
+        <input type="color" id="color3" value="#0000ff">
+        <input type="color" id="color4" value="#ffff00">
+      </div>
+    </fieldset>
 
-    <p>Generated Palette</p>
+    <label>
+      Max Hue Change Amount
+      <input type="number" id="hueShiftMax" value="40"
+             class="g-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+
+      >
+    </label>
+
+
     <!-- Canvas for Palette -->
-    <canvas id="palette" width="1100" height="50"></canvas>
+    <div
+      class="">
+      <p>Generated Palette</p>
+      <div class="palette-container flex flex-wrap">
+
+      </div>
+    </div>
+
     <p></p>
     <button id="savePaletteBtn">Save Palette</button>
-    <button id="toggleModeBtn">Toggle Mode (Intensity / Hue) </button>
-
+    <button id="toggleModeBtn">Toggle Mode (Intensity / Hue)</button>
+  </div>
+  <div
+    class="mx-auto block max-w-lg container p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
     <pre id="gplCodeDisplay"></pre>
-
-    <script>
-        // Get elements
-        const color1Input = document.getElementById('color1');
-        const color2Input = document.getElementById('color2');
-        const color3Input = document.getElementById('color3');
-        const color4Input = document.getElementById('color4');
-        const paletteCanvas = document.getElementById('palette');
-        const ctx = paletteCanvas.getContext('2d');
-        const num_dark_shades = 2;
-        const num_light_shades = 2;
-        let useHueShifting = false;
-        let hue_shift_max = 40;
-        const step_amount = .25;
-
-        const hueShiftMaxInput = document.getElementById('hueShiftMax');
-
-        hueShiftMaxInput.addEventListener('input', (event) => {
-            hue_shift_max = parseInt(event.target.value, 10);
-            drawPalette();
-            updateGPLDisplay();
-        });
-
-        // Function to generate lighter shades of a color
-        function lighterShades(color, amount) {
-            const shades = [];
-            for (let i = 1; i <= num_light_shades; i++) {
-                if (useHueShifting) {
-                    shades.push(hueShift(color, amount * i));
-                }
-                else {
-                    shades.push(lightenColor(color, amount * i));
-                }
-            }
-            return shades;
-        }
-
-        // Function to generate darker shades of a color
-        function darkerShades(color, amount) {
-            const shades = [];
-
-            for (let i = num_dark_shades; i >= 1; i--) {
-                if (useHueShifting) {
-                    shades.push(hueShift(color, -amount * i));
-                }
-                else {
-                    shades.push(darkenColor(color, amount * i));
-                }
-            }
-            console.log("done")
-
-            return shades;
-        }
-
-        // Function to lighten a color
-        function lightenColor(color, amount) {
-            let rgb = hexToRgb(color);
-
-            // Calculate the new RGB values
-            rgb.r = Math.min(255, Math.floor(rgb.r + (255 - rgb.r) * amount));
-            rgb.g = Math.min(255, Math.floor(rgb.g + (255 - rgb.g) * amount));
-            rgb.b = Math.min(255, Math.floor(rgb.b + (255 - rgb.b) * amount));
-
-            return rgbToHex(rgb);
-        }
-
-        // Function to darken a color
-        function darkenColor(color, amount) {
-            let rgb = hexToRgb(color);
-
-            // Calculate the new RGB values
-            rgb.r = Math.max(0, Math.floor(rgb.r * (1 - amount)));
-            rgb.g = Math.max(0, Math.floor(rgb.g * (1 - amount)));
-            rgb.b = Math.max(0, Math.floor(rgb.b * (1 - amount)));
-
-            return rgbToHex(rgb);
-        }
-
-        // Function to shift hue of a color
-        function hueShift(color, amount) {
-            amount = (amount / (step_amount * 2)) * hue_shift_max;
-
-            let hsl = rgbToHsl(hexToRgb(color));
-
-            // Save the original hsl values
-            let original_hsl = { ...hsl };
-
-            // Shift the hue
-            hsl.h = (hsl.h + amount) % 360;
-
-            // Print the original and new rgb values
-            console.log(`Original: ${color}, New: ${rgbToHex(hslToRgb(hsl))}, amount: ${amount}`);
-            // Print the original and new hsl values
-            console.log(`Original: ${JSON.stringify(original_hsl)}, New: ${JSON.stringify(hsl)}`);
-
-            return rgbToHex(hslToRgb(hsl));
-        }
-
-        function rgbToHsl(rgb) {
-            const { r, g, b } = rgb;
-            const color = new w3color(`rgb(${r},${g},${b})`);
-            return { h: color.hue, s: color.sat, l: color.lightness };
-        }
-
-        function hslToRgb(hsl) {
-            const { h, s, l } = hsl;
-            const color = new w3color(`hsl(${h},${s * 100}%,${l * 100}%)`);
-            return { r: color.red, g: color.green, b: color.blue };
-        }
-
-        function rgbToHex(rgb) {
-            const { r, g, b } = rgb;
-            const color = new w3color(`rgb(${r},${g},${b})`);
-            return color.toHexString();
-        }
-
-        function hexToRgb(hex) {
-            const color = new w3color(hex);
-            return { r: color.red, g: color.green, b: color.blue };
-        }
+  </div>
 
 
-        // Test cases
-        function runTests() {
-            const testCases = [
-                { hex: '#ff0000', rgb: { r: 255, g: 0, b: 0 }, hsl: { h: 0, s: 1, l: 0.5 } },
-                { hex: '#00ff00', rgb: { r: 0, g: 255, b: 0 }, hsl: { h: 120, s: 1, l: 0.5 } },
-                { hex: '#0000ff', rgb: { r: 0, g: 0, b: 255 }, hsl: { h: 240, s: 1, l: 0.5 } },
-                { hex: '#808080', rgb: { r: 128, g: 128, b: 128 }, hsl: { h: 0, s: 0, l: 0.5019607843137255 } },
-                { hex: '#800000', rgb: { r: 128, g: 0, b: 0 }, hsl: { h: 0, s: 1, l: 0.25098039215686274 } },
-                { hex: '#008080', rgb: { r: 0, g: 128, b: 128 }, hsl: { h: 180, s: 1, l: 0.25098039215686274 } },
-            ];
+</div>
+<script>
+  // Get elements
+  const color1Input = document.getElementById('color1');
+  const color2Input = document.getElementById('color2');
+  const color3Input = document.getElementById('color3');
+  const color4Input = document.getElementById('color4');
+  const paletteCanvas = document.getElementById('palette');
 
-            testCases.forEach(({ hex, rgb, hsl }) => {
-                const computedHsl = rgbToHsl(rgb);
-                const computedRgb = hslToRgb(hsl);
-                const computedHex = rgbToHex(computedRgb);
+  const num_dark_shades = 2;
+  const num_light_shades = 2;
+  const paletteContainer = document.querySelector(".palette-container");
+  let useHueShifting = false;
+  let hue_shift_max = 40;
+  const step_amount = .25;
 
-                console.log(`Testing ${hex}`);
-                console.log(`Expected HSL: ${JSON.stringify(hsl)}, Computed HSL: ${JSON.stringify(computedHsl)}`);
-                console.log(`Expected RGB: ${JSON.stringify(rgb)}, Computed RGB: ${JSON.stringify(computedRgb)}`);
-                console.log(`Expected Hex: ${hex}, Computed Hex: ${computedHex}`);
-                console.log('---');
-            });
+  const hueShiftMaxInput = document.getElementById('hueShiftMax');
 
-            // Add a test to check if the hue shifting is working correctly
-            const color = '#ff0000';
-            const amount = 0.25;
-            const shiftedColor = hueShift(color, amount);
-            console.log(`Testing hue shifting for ${color} with amount ${amount}`);
-            console.log(`Expected: #ff6a00, Computed: ${shiftedColor}`);
-            console.log('---');
-        }
+  hueShiftMaxInput.addEventListener('input', (event) => {
+    hue_shift_max = parseInt(event.target.value, 10);
+    drawPalette();
+    updateGPLDisplay();
+  });
 
-        // Run the tests
-        runTests();
+  // Function to generate lighter shades of a color
+  function lighterShades(color, amount) {
+    const shades = [];
+    for (let i = 1; i <= num_light_shades; i++) {
+      if (useHueShifting) {
+        shades.push(hueShift(color, amount * i));
+      } else {
+        shades.push(lightenColor(color, amount * i));
+      }
+    }
+    return shades;
+  }
 
-        function generateNewColors(colors) {
-            let new_colors = [];
-            for (const color of colors) {
-                const darkShades = darkerShades(color, step_amount);
-                const lightShades = lighterShades(color, step_amount);
+  // Function to generate darker shades of a color
+  function darkerShades(color, amount) {
+    const shades = [];
 
-                // Add dark shades to new_colors
-                for (const shade of darkShades) {
-                    new_colors.push(shade);
-                }
+    for (let i = num_dark_shades; i >= 1; i--) {
+      if (useHueShifting) {
+        shades.push(hueShift(color, -amount * i));
+      } else {
+        shades.push(darkenColor(color, amount * i));
+      }
+    }
+    console.log("done")
 
-                // Add base color to new_colors
-                new_colors.push(color);
+    return shades;
+  }
 
-                // Add light shades to new_colors
-                for (const shade of lightShades) {
-                    new_colors.push(shade);
-                }
-            }
+  // Function to lighten a color
+  function lightenColor(color, amount) {
+    let rgb = hexToRgb(color);
 
-            // Add black and white colors
-            new_colors.push("#000000");
-            new_colors.push("#FFFFFF");
+    // Calculate the new RGB values
+    rgb.r = Math.min(255, Math.floor(rgb.r + (255 - rgb.r) * amount));
+    rgb.g = Math.min(255, Math.floor(rgb.g + (255 - rgb.g) * amount));
+    rgb.b = Math.min(255, Math.floor(rgb.b + (255 - rgb.b) * amount));
 
-            return new_colors;
-        }
+    return rgbToHex(rgb);
+  }
 
-        // Function to draw palette
-        function drawPalette() {
-            ctx.clearRect(0, 0, paletteCanvas.width, paletteCanvas.height);
-            let x = 0;
-            let amount = .25;
-            const colors = [color1Input.value, color2Input.value, color3Input.value, color4Input.value];
-            let new_colors = [];
+  // Function to darken a color
+  function darkenColor(color, amount) {
+    let rgb = hexToRgb(color);
 
-            new_colors = generateNewColors(colors);
+    // Calculate the new RGB values
+    rgb.r = Math.max(0, Math.floor(rgb.r * (1 - amount)));
+    rgb.g = Math.max(0, Math.floor(rgb.g * (1 - amount)));
+    rgb.b = Math.max(0, Math.floor(rgb.b * (1 - amount)));
 
-            // For each precomputed new_color, draw on screen
-            for (const color of new_colors) {
-                ctx.fillStyle = color;
-                ctx.fillRect(x, 0, 50, 50);
-                x += 50;
-            }
-        }
+    return rgbToHex(rgb);
+  }
 
-        // Draw palette on page load
-        drawPalette();
-        updateGPLDisplay();
+  // Function to shift hue of a color
+  function hueShift(color, amount) {
+    amount = (amount / (step_amount * 2)) * hue_shift_max;
 
-        // Update palette on color change
-        color1Input.addEventListener('input', () => {
-            drawPalette();
-            updateGPLDisplay();
-        });
-        color2Input.addEventListener('input', () => {
-            drawPalette();
-            updateGPLDisplay();
-        });
-        color3Input.addEventListener('input', () => {
-            drawPalette();
-            updateGPLDisplay();
-        });
-        color4Input.addEventListener('input', () => {
-            drawPalette();
-            updateGPLDisplay();
-        });
+    let hsl = rgbToHsl(hexToRgb(color));
 
-        function generateGPL(colors) {
-            let gpl = "GIMP Palette\n";
-            gpl += "Name: Custom Palette\n";
-            gpl += "#\n";
+    // Save the original hsl values
+    let original_hsl = {...hsl};
 
-            const new_colors = generateNewColors(colors);
+    // Shift the hue
+    hsl.h = (hsl.h + amount) % 360;
 
-            // For each new_colors, generate the gpl file
-            for (const color of new_colors) {
-                let rgb = hexToRgb(color);
-                gpl += `${rgb.r} ${rgb.g} ${rgb.b} Untitled\n`;
-            }
+    // Print the original and new rgb values
+    console.log(`Original: ${color}, New: ${rgbToHex(hslToRgb(hsl))}, amount: ${amount}`);
+    // Print the original and new hsl values
+    console.log(`Original: ${JSON.stringify(original_hsl)}, New: ${JSON.stringify(hsl)}`);
 
-            return gpl;
-        }
+    return rgbToHex(hslToRgb(hsl));
+  }
 
-        // Function to download the GPL palette file
-        function downloadGPL(gpl) {
-            const blob = new Blob([gpl], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'palette.gpl';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
+  function rgbToHsl(rgb) {
+    const {r, g, b} = rgb;
+    const color = new w3color(`rgb(${r},${g},${b})`);
+    return {h: color.hue, s: color.sat, l: color.lightness};
+  }
 
-        // Event listener for the save button
-        document.getElementById('savePaletteBtn').addEventListener('click', () => {
-            const colors = [color1Input.value, color2Input.value, color3Input.value, color4Input.value];
-            const gpl = generateGPL(colors);
-            downloadGPL(gpl);
-        });
+  function hslToRgb(hsl) {
+    const {h, s, l} = hsl;
+    const color = new w3color(`hsl(${h},${s * 100}%,${l * 100}%)`);
+    return {r: color.red, g: color.green, b: color.blue};
+  }
 
-        // Event listener for the toggle button
-        document.getElementById('toggleModeBtn').addEventListener('click', () => {
-            useHueShifting = !useHueShifting;
-            drawPalette();
-            updateGPLDisplay();
-        });
+  function rgbToHex(rgb) {
+    const {r, g, b} = rgb;
+    const color = new w3color(`rgb(${r},${g},${b})`);
+    return color.toHexString();
+  }
 
-        function updateGPLDisplay() {
-            const colors = [color1Input.value, color2Input.value, color3Input.value, color4Input.value];
-            const gpl = generateGPL(colors);
-            document.getElementById('gplCodeDisplay').textContent = gpl;
-        }
-    </script>
+  function hexToRgb(hex) {
+    const color = new w3color(hex);
+    return {r: color.red, g: color.green, b: color.blue};
+  }
+
+
+  // Test cases
+  function runTests() {
+    const testCases = [
+      {hex: '#ff0000', rgb: {r: 255, g: 0, b: 0}, hsl: {h: 0, s: 1, l: 0.5}},
+      {hex: '#00ff00', rgb: {r: 0, g: 255, b: 0}, hsl: {h: 120, s: 1, l: 0.5}},
+      {hex: '#0000ff', rgb: {r: 0, g: 0, b: 255}, hsl: {h: 240, s: 1, l: 0.5}},
+      {hex: '#808080', rgb: {r: 128, g: 128, b: 128}, hsl: {h: 0, s: 0, l: 0.5019607843137255}},
+      {hex: '#800000', rgb: {r: 128, g: 0, b: 0}, hsl: {h: 0, s: 1, l: 0.25098039215686274}},
+      {hex: '#008080', rgb: {r: 0, g: 128, b: 128}, hsl: {h: 180, s: 1, l: 0.25098039215686274}},
+    ];
+
+    testCases.forEach(({hex, rgb, hsl}) => {
+      const computedHsl = rgbToHsl(rgb);
+      const computedRgb = hslToRgb(hsl);
+      const computedHex = rgbToHex(computedRgb);
+
+      console.log(`Testing ${hex}`);
+      console.log(`Expected HSL: ${JSON.stringify(hsl)}, Computed HSL: ${JSON.stringify(computedHsl)}`);
+      console.log(`Expected RGB: ${JSON.stringify(rgb)}, Computed RGB: ${JSON.stringify(computedRgb)}`);
+      console.log(`Expected Hex: ${hex}, Computed Hex: ${computedHex}`);
+      console.log('---');
+    });
+
+    // Add a test to check if the hue shifting is working correctly
+    const color = '#ff0000';
+    const amount = 0.25;
+    const shiftedColor = hueShift(color, amount);
+    console.log(`Testing hue shifting for ${color} with amount ${amount}`);
+    console.log(`Expected: #ff6a00, Computed: ${shiftedColor}`);
+    console.log('---');
+  }
+
+  // Run the tests
+  runTests();
+
+  function generateNewColors(colors) {
+    let new_colors = [];
+    for (const color of colors) {
+      const darkShades = darkerShades(color, step_amount);
+      const lightShades = lighterShades(color, step_amount);
+
+      // Add dark shades to new_colors
+      for (const shade of darkShades) {
+        new_colors.push(shade);
+      }
+
+      // Add base color to new_colors
+      new_colors.push(color);
+
+      // Add light shades to new_colors
+      for (const shade of lightShades) {
+        new_colors.push(shade);
+      }
+    }
+
+    // Add black and white colors
+    new_colors.push("#000000");
+    new_colors.push("#FFFFFF");
+
+    return new_colors;
+  }
+
+  // Function to draw palette
+  function drawPalette() {
+
+    let x = 0;
+    let amount = .25;
+    const colors = [color1Input.value, color2Input.value, color3Input.value, color4Input.value];
+    let new_colors = [];
+
+    new_colors = generateNewColors(colors);
+    paletteContainer.innerHTML = "";
+    // For each precomputed new_color, draw on screen
+    for (const color of new_colors) {
+      const swatch = document.createElement("div");
+      swatch.className = "swatch";
+      swatch.style.background = color;
+      paletteContainer.appendChild(swatch);
+    }
+  }
+
+  // Draw palette on page load
+  drawPalette();
+  updateGPLDisplay();
+
+  // Update palette on color change
+  color1Input.addEventListener('input', () => {
+    drawPalette();
+    updateGPLDisplay();
+  });
+  color2Input.addEventListener('input', () => {
+    drawPalette();
+    updateGPLDisplay();
+  });
+  color3Input.addEventListener('input', () => {
+    drawPalette();
+    updateGPLDisplay();
+  });
+  color4Input.addEventListener('input', () => {
+    drawPalette();
+    updateGPLDisplay();
+  });
+
+  function generateGPL(colors) {
+    let gpl = "GIMP Palette\n";
+    gpl += "Name: Custom Palette\n";
+    gpl += "#\n";
+
+    const new_colors = generateNewColors(colors);
+
+    // For each new_colors, generate the gpl file
+    for (const color of new_colors) {
+      let rgb = hexToRgb(color);
+      gpl += `${rgb.r} ${rgb.g} ${rgb.b} Untitled\n`;
+    }
+
+    return gpl;
+  }
+
+  // Function to download the GPL palette file
+  function downloadGPL(gpl) {
+    const blob = new Blob([gpl], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'palette.gpl';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Event listener for the save button
+  document.getElementById('savePaletteBtn').addEventListener('click', () => {
+    const colors = [color1Input.value, color2Input.value, color3Input.value, color4Input.value];
+    const gpl = generateGPL(colors);
+    downloadGPL(gpl);
+  });
+
+  // Event listener for the toggle button
+  document.getElementById('toggleModeBtn').addEventListener('click', () => {
+    useHueShifting = !useHueShifting;
+    drawPalette();
+    updateGPLDisplay();
+  });
+
+  function updateGPLDisplay() {
+    const colors = [color1Input.value, color2Input.value, color3Input.value, color4Input.value];
+    const gpl = generateGPL(colors);
+    document.getElementById('gplCodeDisplay').textContent = gpl;
+  }
+</script>
 </body>
 
 </html>
